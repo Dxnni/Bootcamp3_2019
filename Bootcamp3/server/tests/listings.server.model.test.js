@@ -27,7 +27,7 @@ listing =  {
 describe('Listing Schema Unit Tests', function() {
 
   before(function(done) {
-    mongoose.connect(config.db.uri, { useNewUrlParser: true });
+    mongoose.connect(config.db.uri, { useNewUrlParser: true, useUnifiedTopology: true });
     mongoose.set('useCreateIndex', true);
     mongoose.set('useFindAndModify', false);
     done();

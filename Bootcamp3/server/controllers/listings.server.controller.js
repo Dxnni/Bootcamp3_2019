@@ -41,8 +41,8 @@ exports.create = function(req, res) {
       console.log(err);
       res.status(400).send(err);
     } else {
-      res.json(listing);
-      console.log(listing)
+      console.log('Created new listing: '+listing);
+      res.status(200).send(listing);
     }
   });
 };
@@ -50,6 +50,7 @@ exports.create = function(req, res) {
 /* Show the current listing */
 exports.read = function(req, res) {
   /* send back the listing as json from the request */
+  console.log('Retrieved listing: '+req.listing);
   res.json(req.listing);
 };
 
@@ -57,12 +58,42 @@ exports.read = function(req, res) {
 exports.update = function(req, res) {
   var listing = req.listing;
 
-  /* Replace the listings's properties with the new properties found in req.body */
- 
+  let newListing = req.body;
   /*save the coordinates (located in req.results if there is an address property) */
- 
-  /* Save the listing */
+  if(req.results) {
+    //could add conditional to check if user gave coords so as to not override their coords
+    newListing.coordinates = {
+      latitude: req.results.lat, 
+      longitude: req.results.lng
+    };
+  }
 
+  /* Replace the listings's properties with the new properties found in req.body */
+  Listing.findOneAndUpdate({ _id: listing._id }, newListing, (err, doc) => {
+    if(err) {
+      console.log(err);
+      res.status(400).send(err);
+    }
+    Listing.findById(listing._id, (err, doc) => {
+      if(err) {
+        console.log(err);
+        res.status(400).send(err);
+      }
+      console.log('Updated listing: '+doc);
+      res.status(200).send(doc);
+    });    
+  });    
+  
+  /* Save the listing */
+  // listing.save(function(err) {
+  //   if(err) {
+  //     console.log(err);
+  //     res.status(400).send(err);
+  //   } else {
+  //     res.json(listing);
+  //     console.log(listing)
+  //   }
+  // });
 };
 
 /* Delete a listing */
@@ -70,12 +101,38 @@ exports.delete = function(req, res) {
   var listing = req.listing;
 
   /* Add your code to remove the listins */
+  Listing.findOne({ code: listing.code }, (err, doc) => {
+    if(err){
+      console.log(err);
+      res.status(400).send(err);
+    }
+    else if(doc == null){
+      console.log('No '+listing.code+' to remove');
+      res.status(400).send('No '+listing.code+' to remove');
+    }
 
+    doc.remove((err) =>{
+      if(err){
+        console.log(400);
+        res.status(400).send(err);
+      }
+      console.log('Successfully removed:\n'+doc);
+      res.status(200).send(doc);
+    });
+  });
 };
 
 /* Retreive all the directory listings, sorted alphabetically by listing code */
 exports.list = function(req, res) {
   /* Add your code */
+  Listing.find((err, docs) => {
+    if (err){
+      console.log(err);
+      res.status(400).send(err);
+    }
+    console.log('Retrieved all listings: '+docs.length);
+    res.status(200).send(docs);
+  });
 };
 
 /* 
@@ -88,6 +145,7 @@ exports.list = function(req, res) {
 exports.listingByID = function(req, res, next, id) {
   Listing.findById(id).exec(function(err, listing) {
     if(err) {
+      console.log(err);
       res.status(400).send(err);
     } else {
       req.listing = listing;
